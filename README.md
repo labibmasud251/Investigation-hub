@@ -89,7 +89,32 @@ Rollback migrations:
 ```bash
 npm run migrate:rollback
 ```
+To Run the Front-End
+Investigation Hub Frontend
+A React-based frontend application for the Investigation Hub platform. This application allows clients to submit investigation requests and investigators to accept and manage these investigations.
 
-## License
+Features
+User authentication (Register/Login)
+Role-based access control (Client/Investigator)
+Dashboard for managing investigations
+Investigation submission and management
+Report submission
+Investigator rating system
+User profiles
+Prerequisites
+Node.js (v14 or higher)
+npm (v6 or higher)
+Investigation Hub Backend API running
+Installation
+Clone the repository:
+git clone <repository-url>
+cd investigation-hub-frontend
+Install dependencies:
+npm install
+Create a .env file in the root directory and add the following configuration:
+REACT_APP_API_URL=http://localhost:3000/api
+Development
+To start the development server:
 
-ISC 
+npm start
+The application will be available at http://localhost:3000.
