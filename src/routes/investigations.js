@@ -17,4 +17,8 @@ router.patch('/:id/accept', authenticate, authorize('investigator'), validate(up
 // Complete investigation request
 router.patch('/:id/complete', authenticate, authorize('investigator'), validate(updateInvestigationSchema), investigationController.completeInvestigation);
 
-module.exports = router; 
+// Decline investigation request (Investigator only)
+router.post('/:id/decline', authenticate, authorize('investigator'), investigationController.declineInvestigation);
+
+
+module.exports = router;

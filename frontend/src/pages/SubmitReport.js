@@ -137,15 +137,18 @@ const SubmitReport = () => {
       formDataObj.append('title', formData.title);
       formDataObj.append('content', formData.content);
       formDataObj.append('status', formData.status);
-      formDataObj.append('investigationId', id);
+      // Removed: formDataObj.append('investigationId', id); 
       
       // Append each file to the FormData
       formData.attachments.forEach((file, index) => {
-        formDataObj.append(`attachments`, file);
+        formDataObj.append(`attachments`, file); // Use 'attachments' as the field name, matching common backend expectations for multiple files
       });
       
-      await reportsAPI.createReport(formDataObj);
-      navigate(`/investigations/${id}`);
+      // Call the updated API function with investigationId and formData
+      await reportsAPI.createReport(id, formDataObj); 
+      
+      // Optionally, navigate to a confirmation page or back to the investigation details
+      navigate(`/investigations/${id}`); // Navigate back to investigation details on success
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to submit report');
       console.error('Error submitting report:', err);
@@ -327,4 +330,4 @@ const SubmitReport = () => {
   );
 };
 
-export default SubmitReport; 
+export default SubmitReport;

@@ -106,7 +106,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    authAPI.logout();
+    // Remove the token from local storage first
+    localStorage.removeItem('token'); 
+    
+    // Optionally call backend logout endpoint (if it exists and is needed)
+    authAPI.logout().catch(err => console.error("Backend logout failed:", err)); // Optional: Call backend logout, handle potential errors
+
+    // Clear local state
     setUser(null);
     setIsAuthenticated(false);
   };
@@ -134,4 +140,4 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}; 
+};

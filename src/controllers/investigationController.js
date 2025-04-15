@@ -3,7 +3,8 @@ const { createValidationError, createNotFoundError } = require('../utils/errors'
 
 async function getInvestigations(req, res, next) {
   try {
-    const { status, role } = req.query;
+    const { status, role, id } = req.query;
+    console.dir(req.query);
     let query = knex('investigation_requests')
       .select(
         'investigation_requests.*',
@@ -19,12 +20,23 @@ async function getInvestigations(req, res, next) {
       query = query.where('investigation_requests.status', status);
     }
 
+    if (id) {
+      query = query.where('investigation_requests.id', id);
+    }
+
     if (req.user.role === 'client') {
       query = query.where('investigation_requests.client_id', req.user.id);
     } else if (req.user.role === 'investigator') {
       query = query.where(function() {
         this.where('investigation_requests.investigator_id', req.user.id)
           .orWhere('investigation_requests.investigator_id', null);
+      });
+
+      // Filter out investigations declined by the current investigator
+      query = query.whereNotIn('investigation_requests.id', function() {
+        this.select('investigation_id')
+          .from('declined_investigations')
+          .where('investigator_id', req.user.id);
       });
     }
 
@@ -155,9 +167,54 @@ async function completeInvestigation(req, res, next) {
   }
 }
 
+async function declineInvestigation(req, res, next) {
+  const { id } = req.params; // Investigation ID
+  const investigatorId = req.user.id;
+
+  try {
+    // Check if the investigation exists and is in a state that can be declined (e.g., 'submitted')
+    const investigation = await knex('investigation_requests')
+      .where({ id: id, status: 'submitted', investigator_id: null }) // Can only decline unassigned, submitted requests
+      .first();
+
+    if (!investigation) {
+      // Check if it exists but is already assigned or not submitted
+      const existingRequest = await knex('investigation_requests').where({ id }).first();
+      if (!existingRequest) {
+        throw createNotFoundError('Investigation request not found.');
+      } else if (existingRequest.status !== 'submitted' || existingRequest.investigator_id !== null) {
+        throw createValidationError('Investigation request cannot be declined (already accepted or not in submitted state).');
+      } else {
+        throw createNotFoundError('Investigation request not found or cannot be declined.'); // Generic fallback
+      }
+    }
+
+    // Check if the investigator has already declined this investigation
+    const alreadyDeclined = await knex('declined_investigations')
+      .where({ investigation_id: id, investigator_id: investigatorId })
+      .first();
+
+    if (alreadyDeclined) {
+      return res.status(409).json({ status: 'fail', message: 'Investigation already declined by you.' });
+    }
+
+    // Record the decline action
+    await knex('declined_investigations').insert({
+      investigation_id: id,
+      investigator_id: investigatorId,
+    });
+
+    res.status(200).json({ status: 'success', message: 'Investigation declined successfully.' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+
 module.exports = {
   getInvestigations,
   createInvestigation,
   acceptInvestigation,
-  completeInvestigation
+  completeInvestigation,
+  declineInvestigation // Export the new function
 };

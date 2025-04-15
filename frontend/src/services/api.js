@@ -93,10 +93,17 @@ export const investigationsAPI = {
 
 // Reports API
 export const reportsAPI = {
-  getByInvestigationId: (investigationId) => api.get(`/reports/investigation/${investigationId}`),
-  create: (reportData) => api.post('/reports', reportData),
+  getByInvestigationId: (investigationId) => api.get(`/reports/investigation/${investigationId}`), // Assuming this route exists for fetching
+  // Updated create function to match the route: POST /reports/:investigationId
+  createReport: (investigationId, reportData) => api.post(`/reports/${investigationId}`, reportData, {
+    // Axios should automatically set Content-Type to multipart/form-data when sending FormData
+    // headers: { 'Content-Type': 'multipart/form-data' } // Usually not needed with Axios + FormData
+  }),
   update: (id, reportData) => api.put(`/reports/${id}`, reportData),
   delete: (id) => api.delete(`/reports/${id}`),
+  // Add functions for rating and getting specific report if needed, based on routes.js
+  getReport: (investigationId) => api.get(`/reports/${investigationId}`),
+  rateReport: (investigationId, ratingData) => api.post(`/reports/${investigationId}/rate`, ratingData),
 };
 
-export default api; 
+export default api;

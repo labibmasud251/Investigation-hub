@@ -23,8 +23,8 @@ import {
   Logout as LogoutIcon,
   SwapHoriz as SwapHorizIcon,
   Assignment as AssignmentIcon,
-  ListAlt as ListAltIcon,
-  Description as DescriptionIcon
+  ListAlt as ListAltIcon, // Existing icon for Investigator's "My Investigations"
+  Description as DescriptionIcon // Use this for Client's "My Submitted Investigations"
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 
@@ -70,16 +70,22 @@ const Navbar = () => {
 
   const handleMyInvestigations = () => {
     handleClose();
-    navigate('/my-investigations');
+    navigate('/my-investigations'); // Investigator specific
+  };
+
+  // Handler for the new client link
+  const handleMySubmittedInvestigations = () => {
+    handleClose();
+    navigate('/investigation-requests'); // Route for the client's view
   };
 
   const handleToggleRole = async () => {
     try {
       setLoading(true);
-      await toggleRole();
+      await toggleRole(); // Update the role in context
       handleClose();
-      // Refresh the page to update the UI based on the new role
-      window.location.reload();
+      // Navigate to dashboard instead of reloading the page for a smoother transition
+      navigate('/dashboard'); 
     } catch (error) {
       console.error('Failed to toggle role:', error);
     } finally {
@@ -117,6 +123,7 @@ const Navbar = () => {
             </Button>
             
             {activeRole === 'client' && (
+              <> {/* Fragment starts here */}
               <Button 
                 color="inherit" 
                 component={RouterLink} 
@@ -126,7 +133,18 @@ const Navbar = () => {
               >
                 New Investigation
               </Button>
-            )}
+              {/* Add Button for My Submitted Investigations for Client (Moved inside the block) */}
+              <Button 
+                color="inherit" 
+                component={RouterLink} 
+                to="/investigation-requests" 
+                startIcon={<DescriptionIcon />}
+                sx={{ mr: 2 }}
+              >
+                My Submissions
+              </Button>
+              </> // Fragment ends here
+            )} 
             
             {activeRole === 'investigator' && (
               <>
@@ -193,12 +211,21 @@ const Navbar = () => {
               </MenuItem>
               
               {activeRole === 'client' && (
+                <> {/* Fragment starts here */}
                 <MenuItem onClick={handleNewInvestigation}>
                   <ListItemIcon>
                     <AddIcon fontSize="small" />
                   </ListItemIcon>
                   New Investigation
                 </MenuItem>
+                {/* Add MenuItem for My Submitted Investigations for Client (Moved inside the block) */}
+                <MenuItem onClick={handleMySubmittedInvestigations}>
+                  <ListItemIcon>
+                    <DescriptionIcon fontSize="small" />
+                  </ListItemIcon>
+                  My Submissions
+                </MenuItem>
+                </> // Fragment ends here
               )}
               
               {activeRole === 'investigator' && (
@@ -269,4 +296,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar; 
+export default Navbar;

@@ -27,105 +27,83 @@ import {
   Visibility as ViewIcon,
   CheckCircle as AcceptIcon,
   Cancel as DeclineIcon,
-  FilterList as FilterIcon
+  FilterList as FilterIcon // Keep FilterIcon for potential future use, but remove dropdown for now
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { investigationsAPI } from '../services/api';
 
-const InvestigationRequests = () => {
+// Renaming component for clarity, although file name remains the same for now
+const MySubmittedInvestigations = () => { 
   const navigate = useNavigate();
   const { user } = useAuth();
   const [investigations, setInvestigations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('all');
+  // const [filter, setFilter] = useState('all'); // Removed filter state
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [processingAction, setProcessingAction] = useState(null);
+  // const [processingAction, setProcessingAction] = useState(null); // Removed processingAction state
 
   useEffect(() => {
-    fetchInvestigationRequests();
-  }, [page, filter]);
+    // Fetch investigations when page or searchTerm changes (if search is implemented on backend)
+    fetchMySubmittedInvestigations(); 
+  }, [page, searchTerm]); // Update dependency array
 
-  const fetchInvestigationRequests = async () => {
+  const fetchMySubmittedInvestigations = async () => { // Renamed function
     try {
       setLoading(true);
       setError(null);
       
-      // Fetch pending investigations that are available for investigators
-      const response = await investigationsAPI.getAll({
-        status: 'submitted', // Changed from 'pending' to 'submitted' to match API response
+      // Fetch investigations submitted by the current user
+      // Assuming the API can filter by clientId or a dedicated endpoint exists
+      const response = await investigationsAPI.getAll({ 
+        clientId: user.id, // Filter by current user's ID
+        // status: 'submitted', // Optionally filter by status if needed
         page,
         limit: 10,
-        filter
+        search: searchTerm // Pass search term to API if backend supports it
       });
       
-      // Handle the API response format
+      // Handle the API response format (assuming similar structure)
       if (response.data && response.data.status === 'success') {
         setInvestigations(response.data.data);
         // If the API doesn't return total count, estimate based on current page
-        setTotalPages(Math.max(1, Math.ceil(response.data.data.length / 10)));
+        // Use total count from API if available, otherwise estimate
+        setTotalPages(response.data.totalPages || Math.max(1, Math.ceil(response.data.data.length / 10))); 
       } else {
         setInvestigations([]);
         setTotalPages(1);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch investigation requests');
-      console.error('Error fetching investigation requests:', err);
+      setError(err.response?.data?.message || 'Failed to fetch your submitted investigations');
+      console.error('Error fetching submitted investigations:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setPage(1);
-    fetchInvestigationRequests();
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    // Optional: Fetch on type, or wait for submit/blur if preferred
+    // setPage(1); // Reset page on new search
+    // fetchMySubmittedInvestigations(); 
   };
 
-  const handleFilterChange = (e) => {
-    setFilter(e.target.value);
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
     setPage(1);
+    fetchMySubmittedInvestigations();
   };
+
+  // Removed handleFilterChange function
 
   const handlePageChange = (event, value) => {
     setPage(value);
   };
 
-  const handleAcceptInvestigation = async (id) => {
-    try {
-      setProcessingAction(id);
-      
-      // Create the payload according to the schema format
-      const acceptPayload = {
-        status: 'accepted',
-        notes: 'Investigation accepted by investigator',
-        completionDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
-      };
-      
-      await investigationsAPI.accept(id, acceptPayload);
-      fetchInvestigationRequests();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to accept investigation');
-      console.error('Error accepting investigation:', err);
-    } finally {
-      setProcessingAction(null);
-    }
-  };
-
-  const handleDeclineInvestigation = async (id) => {
-    try {
-      setProcessingAction(id);
-      await investigationsAPI.decline(id);
-      fetchInvestigationRequests();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to decline investigation');
-      console.error('Error declining investigation:', err);
-    } finally {
-      setProcessingAction(null);
-    }
-  };
+  // Removed handleAcceptInvestigation function
+  // Removed handleDeclineInvestigation function
 
   const handleViewDetails = (id) => {
     navigate(`/investigations/${id}`);
@@ -159,7 +137,7 @@ const InvestigationRequests = () => {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom>
-        Investigation Requests
+        My Submitted Investigations 
       </Typography>
       
       {error && (
@@ -170,13 +148,14 @@ const InvestigationRequests = () => {
       
       <Paper sx={{ p: 3, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={6}>
-            <form onSubmit={handleSearch}>
+          {/* Keep Search Bar */}
+          <Grid item xs={12} md={8}> 
+            <form onSubmit={handleSearchSubmit}> 
               <TextField
                 fullWidth
-                placeholder="Search investigations..."
+                placeholder="Search your investigations..." // Updated placeholder
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange} // Use new handler
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -187,29 +166,7 @@ const InvestigationRequests = () => {
               />
             </form>
           </Grid>
-          <Grid item xs={12} md={6}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <FormControl sx={{ minWidth: 200 }}>
-                <InputLabel id="filter-label">Filter</InputLabel>
-                <Select
-                  labelId="filter-label"
-                  value={filter}
-                  onChange={handleFilterChange}
-                  label="Filter"
-                  startAdornment={
-                    <InputAdornment position="start">
-                      <FilterIcon />
-                    </InputAdornment>
-                  }
-                >
-                  <MenuItem value="all">All Requests</MenuItem>
-                  <MenuItem value="high">High Priority</MenuItem>
-                  <MenuItem value="medium">Medium Priority</MenuItem>
-                  <MenuItem value="low">Low Priority</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-          </Grid>
+          {/* Removed Filter Dropdown Grid item */}
         </Grid>
       </Paper>
       
@@ -220,7 +177,7 @@ const InvestigationRequests = () => {
       ) : investigations.length === 0 ? (
         <Paper sx={{ p: 3, textAlign: 'center' }}>
           <Typography variant="h6" color="text.secondary">
-            No investigation requests found.
+            You have not submitted any investigations yet, or none match your search.
           </Typography>
         </Paper>
       ) : (
@@ -237,11 +194,16 @@ const InvestigationRequests = () => {
                     <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
                       <Chip 
                         label={investigation.status} 
-                        color="warning"
+                        // Determine color based on status (e.g., submitted, accepted, in_progress, completed, declined)
+                        color={ getStatusColor(investigation.status) } // Need to implement getStatusColor
+                        size="small"
+                      />
+                       <Chip 
+                        label={`Priority: ${investigation.priority}`} 
+                        color={getPriorityColor(investigation.priority)} // Use existing priority color logic
                         size="small"
                       />
                     </Box>
-                    
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                       {investigation.description.length > 150 
                         ? `${investigation.description.substring(0, 150)}...` 
@@ -278,31 +240,17 @@ const InvestigationRequests = () => {
                     </Grid>
                   </CardContent>
                   
-                  <CardActions sx={{ justifyContent: 'space-between', p: 2 }}>
+                  <CardActions sx={{ justifyContent: 'flex-end', p: 2 }}>
+                    {/* Add View Details Button */}
                     <Button
                       startIcon={<ViewIcon />}
                       onClick={() => handleViewDetails(investigation.id)}
+                      variant="outlined" // Or contained
+                      size="small"
                     >
                       View Details
                     </Button>
-                    <Box>
-                      <Button
-                        startIcon={<AcceptIcon />}
-                        color="success"
-                        onClick={() => handleAcceptInvestigation(investigation.id)}
-                        disabled={processingAction === investigation.id}
-                      >
-                        Accept
-                      </Button>
-                      <Button
-                        startIcon={<DeclineIcon />}
-                        color="error"
-                        onClick={() => handleDeclineInvestigation(investigation.id)}
-                        disabled={processingAction === investigation.id}
-                      >
-                        Decline
-                      </Button>
-                    </Box>
+                    {/* Add other client-specific actions here if needed (e.g., Edit, Cancel) */}
                   </CardActions>
                 </Card>
               </Grid>
@@ -323,6 +271,18 @@ const InvestigationRequests = () => {
       )}
     </Container>
   );
+}; // End of MySubmittedInvestigations component
+
+// Helper function for status color (moved outside the component)
+const getStatusColor = (status) => {
+  switch (status?.toLowerCase()) {
+    case 'submitted': return 'info';
+    case 'accepted': return 'secondary';
+    case 'in_progress': return 'primary';
+    case 'completed': return 'success';
+    case 'declined': return 'error';
+    default: return 'default';
+  }
 };
 
-export default InvestigationRequests; 
+export default MySubmittedInvestigations; // Export statement moved outside the component
