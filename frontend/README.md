@@ -74,18 +74,4 @@ src/
 - `npm run build` - Creates a production build
 - `npm run eject` - Ejects from Create React App
 
-## API Integration
-
-The frontend communicates with the Investigation Hub Backend API. Make sure the backend server is running and the `REACT_APP_API_URL` environment variable is set correctly.
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
 This project is licensed under the MIT License - see the LICENSE file for details. 
